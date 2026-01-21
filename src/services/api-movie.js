@@ -21,4 +21,8 @@ export class ApiMovie {
         });
         return response.data;
     }
+    static async getNowPlaying() {
+        const response = await movieInstance.get('/movie/now_playing');
+        return response.data;
+    }
 }
