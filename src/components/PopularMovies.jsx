@@ -1,18 +1,24 @@
-// src/pages/PopularMovies.jsx (o en tu carpeta de componentes)
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { ApiMovie } from "../services/api-movie.js";
 import { buildUrlImage } from "../utils/buildUrlImage.js";
 import Modal from "./Modal.jsx";
 import Searchbar from "./Searchbar.jsx";
+import MovieFilter from "./MovieFilter.jsx";
+import Pagination from "./Pagination.jsx";
+
 
 export default function PopularMovies() {
     const [movies, setMovies] = useState([]);
     const [isOpenModal, setIsOpenModal] = useState(false);
     const [selectedMovie, setSelectedMovie] = useState(null);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [activeFilters, setActiveFilters] = useState({ genre: '', year: '' });
 
-    const fetchPopularMovies = async () => {
-        const response = await ApiMovie.getPopularMovies();
+    const fetchPopularMovies = async (page = 1) => {
+        const response = await ApiMovie.getPopularMovies(page);
         setMovies(response.results);
+        setTotalPages(response.total_pages);
     };
 
     const handleOpenModal = (movie) => {
@@ -22,21 +28,55 @@ export default function PopularMovies() {
 
     const handleSearch = async (query) => {
         if (query.trim() === "") {
-            fetchPopularMovies();
+            fetchPopularMovies(1);
             return;
         }
         const response = await ApiMovie.searchMovies(query);
         setMovies(response.results);
+        setTotalPages(response.total_pages)
+    };
+
+    const handleFilterChange = useCallback(async ({ genre, year }) => {
+        // Guardamos los filtros para que la paginación sepa qué pedir
+        setActiveFilters({ genre, year });
+        setCurrentPage(1); //Volver a la pagina 1 despues de filtrar
+
+        try {
+            if (!genre && !year) {
+                const data = await ApiMovie.getPopularMovies(1);
+                setMovies(data.results);
+                setTotalPages(data.total_pages);
+                return;
+            }
+            const data = await ApiMovie.discoverMovies(genre, year, 1);
+            setMovies(data.results);
+            setTotalPages(data.total_pages);
+        } catch (error) {
+            console.error("Error al filtrar películas:", error);
+        }
+    }, []);
+    const handlePageChange = async (page) => {
+        setCurrentPage(page);
+
+        // Efecto para subir despues de sleccinar pagina
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        if (!activeFilters.genre && !activeFilters.year) {
+
+            await fetchPopularMovies(page);
+        } else {
+
+            const data = await ApiMovie.discoverMovies(activeFilters.genre, activeFilters.year, page);
+            setMovies(data.results);
+        }
     };
 
     useEffect(() => {
-        fetchPopularMovies();
+        fetchPopularMovies(1);
     }, []);
 
     return (
         <div className="max-w-7xl mx-auto px-6 py-10">
-
-            {/* Cabecera y Buscador */}
             <div className="flex items-center justify-between mb-10 border-l-4 border-red-600 pl-4">
                 <h1 className="text-3xl font-bold text-white tracking-tight">
                     Películas Populares
@@ -47,9 +87,10 @@ export default function PopularMovies() {
                 </span>
             </div>
 
-            {/* Grid de películas */}
+            <MovieFilter onFilterChange={handleFilterChange} />
+
             <ul className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-8">
-                {movies.map((movie) => (
+                {movies && movies.map((movie) => ( // Agregada validación movies &&
                     <li
                         key={movie.id}
                         onClick={() => handleOpenModal(movie)}
@@ -68,7 +109,6 @@ export default function PopularMovies() {
                             <h2 className="text-sm font-bold text-white line-clamp-1 group-hover:text-red-500 transition-colors">
                                 {movie.title}
                             </h2>
-
                             <div className="flex items-center justify-between mt-3 text-white">
                                 <span className="text-xs font-semibold text-zinc-500">
                                     {movie.release_date?.slice(0, 4)}
@@ -82,7 +122,12 @@ export default function PopularMovies() {
                 ))}
             </ul>
 
-            {/* Modal de información de las peliculas */}
+            <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+            />
+
             <Modal
                 isOpen={isOpenModal}
                 movie={selectedMovie}

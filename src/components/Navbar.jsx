@@ -26,16 +26,7 @@ export default function Navbar() {
                             isActive ? "text-white" : "text-zinc-400 hover:text-zinc-200 transition"
                         }
                     >
-                        Lo mas Popular
-                    </NavLink>
-
-                    <NavLink
-                        to="/generos"
-                        className={({ isActive }) =>
-                            isActive ? "text-white" : "text-zinc-400 hover:text-zinc-200 transition"
-                        }
-                    >
-                        Generos
+                        Peliculas
                     </NavLink>
 
                     <NavLink
