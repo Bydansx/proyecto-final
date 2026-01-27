@@ -45,4 +45,12 @@ export class ApiMovie {
         });
         return response.data;
     }
+    static async getMovieVideos(movieId, lang = 'es-MX') {
+        const response = await movieInstance.get(`/movie/${movieId}/videos`, {
+            params: {
+                language: lang
+            }
+        });
+        return response.data.results;
+    }
 }
