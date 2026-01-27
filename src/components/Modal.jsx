@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../constants/supabaseClient.js';
 import { ApiMovie } from '../services/api-movie.js';
-import {QRCodeCanvas} from "qrcode.react"; // Usamos tu servicio actualizado
+import {QRCodeCanvas} from "qrcode.react";
 
 export default function Modal({ isOpen, onClose, movie }) {
     const [isFavorite, setIsFavorite] = useState(false);
     const [loadingFav, setLoadingFav] = useState(false);
     const [trailerKey, setTrailerKey] = useState(null);
 
-    // 1. Efecto para cargar datos al abrir el modal
+    //EFECTO DE CARGA DE DATOS EN EL MODAL
     useEffect(() => {
         if (isOpen && movie?.id) {
             setTrailerKey(null);
@@ -17,18 +17,18 @@ export default function Modal({ isOpen, onClose, movie }) {
         }
     }, [isOpen, movie]);
 
-    // 2. Lógica para obtener el tráiler usando tu clase ApiMovie
+    // TRAEMOS EL TRAILER
     const fetchTrailer = async () => {
         try {
-            // Intentamos primero en español
+            // PROBAMOS EN ESPAÑOL
             let results = await ApiMovie.getMovieVideos(movie.id, 'es-MX');
 
-            // Si no hay resultados, intentamos en inglés automáticamente
+            // SI NO LA ENCUENTRA, CAMBIAMOS A INGLES
             if (!results || results.length === 0) {
                 results = await ApiMovie.getMovieVideos(movie.id, 'en-US');
             }
 
-            // Buscamos un "Trailer" oficial, o en su defecto un "Teaser" o "Clip"
+            // TRAEMOS EL TRAILER OFICIAL
             const video = results.find(v => v.site === "YouTube" && v.type === "Trailer")
                 || results.find(v => v.site === "YouTube" && (v.type === "Teaser" || v.type === "Clip"));
 
@@ -40,7 +40,7 @@ export default function Modal({ isOpen, onClose, movie }) {
         }
     };
 
-    // 3. Verificar si está en favoritos en Supabase
+    // SUPABASE
     const checkIfFavorite = async () => {
         const { data } = await supabase
             .from('favorites')
@@ -50,7 +50,7 @@ export default function Modal({ isOpen, onClose, movie }) {
         setIsFavorite(!!data);
     };
 
-    // 4. Agregar o eliminar de favoritos
+    // AGREGAMOS O ELIMINAMOS
     const toggleFavorite = async () => {
         setLoadingFav(true);
         if (isFavorite) {
@@ -60,7 +60,7 @@ export default function Modal({ isOpen, onClose, movie }) {
                 .eq('movie_id', movie.id);
             if (!error) setIsFavorite(false);
         } else {
-            // Capturamos el dispositivo del usuario
+            // REGISTRAMOS EL DISPOSITIVO INGRESADO EN EL QUE SE REGISTRO LA PELICULA
             const deviceDetail = navigator.userAgentData
                 ? `${navigator.userAgentData.platform} - ${navigator.userAgentData.brands[0].brand}`
                 : navigator.platform;
@@ -72,7 +72,6 @@ export default function Modal({ isOpen, onClose, movie }) {
                     title: movie.title || movie.name,
                     poster_path: movie.poster_path,
                     device: deviceDetail
-                    // created_at se genera automáticamente en Supabase
                 }]);
             if (!error) setIsFavorite(true);
         }
@@ -83,18 +82,16 @@ export default function Modal({ isOpen, onClose, movie }) {
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-md p-4 text-white">
-            {/* Overlay para cerrar */}
+
             <div className="absolute inset-0" onClick={onClose}></div>
 
-            {/* Contenedor Principal del Modal */}
+            {/* MODAL */}
             <div className="relative bg-zinc-950 rounded-[2.5rem] shadow-2xl w-full max-w-6xl border border-white/10 flex flex-col md:flex-row max-h-[90vh] overflow-hidden">
 
-                {/* BOTÓN CERRAR */}
                 <button onClick={onClose} className="absolute top-5 right-5 z-[80] p-2 bg-black/60 hover:bg-white hover:text-black rounded-full transition-all">
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
 
-                {/* --- COLUMNA IZQUIERDA: PÓSTER Y QR --- */}
                 <div className="w-full md:w-[320px] bg-zinc-900 flex flex-col flex-shrink-0 border-r border-white/5">
                     <img
                         src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
@@ -102,17 +99,17 @@ export default function Modal({ isOpen, onClose, movie }) {
                         className="w-full h-auto object-cover"
                     />
 
-                    {/* Espacio para el Código QR */}
+
                     <div className="p-10 flex-1 flex flex-col items-center justify-center gap-4 bg-zinc-900">
                         <div className="bg-white p-3 rounded-2xl shadow-xl transition-transform hover:scale-110 duration-300">
-                            {/* GENERADOR DE QR DINÁMICO */}
+
                             <QRCodeCanvas
-                                value={`https://tu-app-movie.vercel.app/movie/${movie.id}`} // Aquí va la URL de tu app
+                                value={`https://tu-app-movie.vercel.app/movie/${movie.id}`}
                                 size={120}
-                                level={"H"} // Alta recuperación de errores
+                                level={"H"}
                                 includeMargin={false}
                                 imageSettings={{
-                                    src: "/logo-mini.png", // Puedes poner un mini logo en el centro
+                                    src: "/logo-mini.png",
                                     x: undefined,
                                     y: undefined,
                                     height: 24,
@@ -127,10 +124,10 @@ export default function Modal({ isOpen, onClose, movie }) {
                     </div>
                 </div>
 
-                {/* --- COLUMNA DERECHA: TRÁILER E INFO --- */}
+                {/* TRAILER Y INFO --- */}
                 <div className="flex-1 flex flex-col overflow-y-auto custom-scrollbar">
 
-                    {/* Sección del Video */}
+                    {/* VIDEO */}
                     <div className="relative w-full aspect-video bg-black group">
                         {trailerKey ? (
                             <iframe
@@ -158,7 +155,7 @@ export default function Modal({ isOpen, onClose, movie }) {
                         )}
                     </div>
 
-                    {/* Sección de Texto */}
+                    {/* IFNFORMACION */}
                     <div className="p-8 md:p-12 space-y-8">
                         <div className="flex justify-between items-start gap-8">
                             <h2 className="text-4xl md:text-6xl font-black tracking-tighter leading-none">
@@ -193,12 +190,6 @@ export default function Modal({ isOpen, onClose, movie }) {
                         <p className="text-zinc-400 leading-relaxed text-xl font-medium max-w-3xl">
                             {movie.overview || "Esta obra maestra no tiene una descripción disponible todavía."}
                         </p>
-
-                        <div className="pt-4">
-                            <button className="bg-white text-black font-black px-10 py-4 rounded-2xl hover:bg-red-600 hover:text-white transition-all duration-300 uppercase tracking-widest text-sm shadow-xl">
-                                Ver ahora
-                            </button>
-                        </div>
                     </div>
                 </div>
             </div>

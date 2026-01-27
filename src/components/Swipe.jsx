@@ -52,8 +52,6 @@ export default function Swipe({ movies, onMovieClick }) {
                     </SwiperSlide>
                 ))}
             </Swiper>
-
-            {/* Personalización de los puntos de navegación */}
             <style jsx global>{`
                 .swiper-pagination-bullet { background: #52525b !important; opacity: 1; }
                 .swiper-pagination-bullet-active { background: #e11d48 !important; width: 30px; border-radius: 4px; }
